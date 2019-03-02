@@ -19,7 +19,7 @@ type Row struct {
 	numberOfBuds    string
 	numberOfFlowers string
 	numberMature    string
-	initals         string
+	initials        string
 	comments        string
 }
 
@@ -31,50 +31,52 @@ var (
 
 func main() {
 	run := true
-	pathToFile := ""
-	reader := bufio.NewReader(os.Stdin)
+	initial := true
 
 	for {
+		reader := bufio.NewReader(os.Stdin)
 		fmt.Println(`Welcome to the File Reader by Nicholas Lockhart!
 		Choose one of the following options:
-		1. load/reload data from a file
-		2. Display all records 
-		3. Create a new record
-		4. Display specific record
-		5. Delete a record
-		6. Quit the awesome File Reader
+		a. load/reload data from a file
+		b. Display all records 
+		c. Create a new record
+		d. Display specific record
+		e. Delete a record
+		f. Quit the awesome File Reader
 		Choice: `)
 
-		choice, _ := reader.ReadString('\n')
+		choice, _, err := reader.ReadRune()
+		check(err)
 
 		switch choice {
-		case "1":
-			loadFile()
-		case "2":
-			if pathToFile == "" {
+		case 'a':
+			loadFile(initial)
+			initial = false
+		case 'b':
+			if initial {
 				fmt.Println("whoops, load a file first dum dum. Nicholas Lockhart")
 				continue
 			}
 			displayRecords()
-		case "3":
-			if pathToFile == "" {
+		case 'c':
+			if initial {
 				fmt.Println("whoops, load a file first dum dum. Nicholas Lockhart")
 				continue
 			}
 			createRecord()
-		case "4":
-			if pathToFile == "" {
+		case 'd':
+			if initial {
 				fmt.Println("whoops, load a file first dum dum. Nicholas Lockhart")
 				continue
 			}
 			workWithRecord()
-		case "5":
-			if pathToFile == "" {
+		case 'e':
+			if initial {
 				fmt.Println("whoops, load a file first dum dum. Nicholas Lockhart")
 				continue
 			}
 			deleteRecord()
-		case "6":
+		case 'f':
 			fmt.Println("Sorry to see you go. Goodbye! Nicholas Lockhart")
 			run = false
 		default:
@@ -92,15 +94,16 @@ func check(e error) {
 	}
 }
 
-func loadFile() {
+func loadFile(initial bool) {
 	//TODO get the file name
-	if pathToFile == "" {
+	if initial {
 		fmt.Println("Let's read some dope files! Enter the path here:")
 		pathToFile, _ = reader.ReadString('\n')
 	} else {
 		fmt.Println("Let's reload the data! Enter the path to the file:")
 		pathToFile, _ = reader.ReadString('\n')
 	}
+	pathToFile = strings.TrimSpace(pathToFile)
 
 	fmt.Println("Nicholas Lockhart")
 
@@ -133,24 +136,132 @@ func displayRecords() {
 	for i, s := range records {
 		if i == 0 {
 			for i := 0; i < ref.NumField(); i++ {
-				fmt.Println("%s\t",
-					typeOfT.Field(i).Name)
+				fmt.Print("\t" + typeOfT.Field(i).Name)
 			}
+			fmt.Println()
 		}
-		fmt.Println("%d: %s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t", i+1,
-			s.species, s.year, s.dayOfYear, s.id, s.numberOfBuds, s.numberOfFlowers, s.numberMature, s.initals, s.comments)
+		fmt.Println(i+1, "\t",
+			s.species, "\t",
+			s.year, "\t",
+			s.dayOfYear, "\t",
+			s.id, "\t",
+			s.numberOfBuds, "\t",
+			s.numberOfFlowers, "\t",
+			s.numberMature, "\t",
+			s.initials, "\t",
+			s.comments)
 	}
 	fmt.Println("Nicholas Lockhart")
 }
 
 func createRecord() {
 	//TODO add a new record to slice
+	fmt.Println("Awesome, let's make a new record!")
+
+	fmt.Println("What species of Flower is it?")
+	reader := bufio.NewReader(os.Stdin)
+	species, err := reader.ReadString('\n')
+	check(err)
+	species = strings.TrimSuffix(species, "\n")
+
+	fmt.Println("What year is it?")
+	year, err := reader.ReadString('\n')
+	check(err)
+	year = strings.TrimSuffix(year, "\n")
+
+	fmt.Println("What is the julian day of the year?")
+	day, err := reader.ReadString('\n')
+	check(err)
+	day = strings.TrimSuffix(day, "\n")
+
+	fmt.Println("What is the id of the flower")
+	id, err := reader.ReadString('\n')
+	check(err)
+	id = strings.TrimSuffix(id, "\n")
+
+	fmt.Println("How many buds are there?")
+	bud, err := reader.ReadString('\n')
+	check(err)
+	bud = strings.TrimSuffix(bud, "\n")
+
+	fmt.Println("How many flowers?")
+	flower, err := reader.ReadString('\n')
+	check(err)
+	flower = strings.TrimSuffix(flower, "\n")
+
+	fmt.Println("How many are mature?")
+	mature, err := reader.ReadString('\n')
+	check(err)
+	mature = strings.TrimSuffix(mature, "\n")
+
+	fmt.Println("Place your initials")
+	initials, err := reader.ReadString('\n')
+	check(err)
+	initials = strings.TrimSuffix(initials, "\n")
+
+	fmt.Println("Any Comments?")
+	comment, err := reader.ReadString('\n')
+	check(err)
+	comment = strings.TrimSuffix(comment, "\n")
+
+	fmt.Println("Placing your info into the list! Nicholas Lockhart")
+
+	records = append(records, Row{species, year, day, id, bud, flower, mature, initials, comment})
+
 }
 
 func workWithRecord() {
 	//TODO work with record
+	fmt.Println("Alright, tell me the index of the record you want to change: ")
+
+	reader := bufio.NewReader(os.Stdin)
+	in, _, err := reader.ReadRune()
+	check(err)
+	i := int(in)
+
+	fmt.Println("tell me what you want to change: species, year, dayOfYear, id, numberOfBuds, numberOfFlowers, numberMature, initals, comments")
+
+	field, err := reader.ReadString('\n')
+	check(err)
+	field = strings.TrimSuffix(field, "\n")
+
+	fmt.Println("The new value:")
+
+	value, err := reader.ReadString('\n')
+	check(err)
+	value = strings.TrimSuffix(value, "\n")
+
+	switch field {
+	case "species":
+		records[i].species = value
+	case "year":
+		records[i].year = value
+	case "dayOfYear":
+		records[i].dayOfYear = value
+	case "id":
+		records[i].id = value
+	case "numberOfBuds":
+		records[i].numberOfBuds = value
+	case "numberOfFlowers":
+		records[i].numberOfFlowers = value
+	case "numberMature":
+		records[i].numberMature = value
+	case "initials":
+		records[i].initials = value
+	case "comments":
+		records[i].comments = value
+	default:
+		fmt.Println("whoops you made a mistake. Returning to main menu! Nicholas Lockhart")
+	}
 }
 
 func deleteRecord() {
+	fmt.Println("Alright, tell me the index of the record you want to get rid of: ")
 
+	reader := bufio.NewReader(os.Stdin)
+	in, _, err := reader.ReadRune()
+	check(err)
+	i := int(in)
+	records = append(records[:i], records[i+1:]...)
+	fmt.Println("check it out, it should be deleted! Nicholas Lockhart")
 }
