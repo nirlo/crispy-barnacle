@@ -1,14 +1,18 @@
-package main
+/*
+	Simple CLI program for taking in a csv file and placing the lines
+	into a slice to be edited and changed
+
+	Authored by: Nicholas Lockhart
+	Course: CST 8333 Program Language Reseach Project
+	 Professor: Stan Pieda
+*/package main
 
 import (
 	"bufio"
 	"fmt"
 	"os"
-	"reflect"
 	"strings"
 )
-
-//Species,Year,Julian Day of Year,Plant Identification Number,Number of Buds,Number of Flowers,Number of Flowers that have Reached Maturity,Observer Initials,Observer Comments
 
 // Row A struct specifically for a row of data. This is what will be pulled from the csv
 type Row struct {
@@ -23,13 +27,18 @@ type Row struct {
 	comments        string
 }
 
+// Global variables. These will be used through out the program.
 var (
 	pathToFile = ""
 	reader     = bufio.NewReader(os.Stdin)
+	columns    = ""
 	records    []Row
 )
 
+// Main function, prints the menu out to the console for the user
 func main() {
+
+	// How we determine if we are going to stop the program
 	run := true
 	initial := true
 
@@ -45,37 +54,43 @@ func main() {
 		f. Quit the awesome File Reader
 		Choice: `)
 
+		//Grabs the choice as a char and switch from there
 		choice, _, err := reader.ReadRune()
 		check(err)
 
 		switch choice {
+		// Read the file in. Will overwrite the in memory structure if necessary
 		case 'a':
-			loadFile(initial)
+			records = loadFile(initial)
 			initial = false
+		// checks to see if the file is in memory, displays them otherwise
 		case 'b':
 			if initial {
 				fmt.Println("whoops, load a file first dum dum. Nicholas Lockhart")
 				continue
 			}
-			displayRecords()
+			displayRecords(records)
+		// Add a record to the in memory structure
 		case 'c':
 			if initial {
 				fmt.Println("whoops, load a file first dum dum. Nicholas Lockhart")
 				continue
 			}
-			createRecord()
+			records = createRecord(records)
+		// change a member of the structure
 		case 'd':
 			if initial {
 				fmt.Println("whoops, load a file first dum dum. Nicholas Lockhart")
 				continue
 			}
-			workWithRecord()
+			records = workWithRecord(records)
+		// Remove a record from the structure
 		case 'e':
 			if initial {
 				fmt.Println("whoops, load a file first dum dum. Nicholas Lockhart")
 				continue
 			}
-			deleteRecord()
+			records = deleteRecord(records)
 		case 'f':
 			fmt.Println("Sorry to see you go. Goodbye! Nicholas Lockhart")
 			run = false
@@ -88,14 +103,23 @@ func main() {
 	}
 }
 
+/*
+	A simple check for errors when processing a file or read.
+	applying DRY methodology
+*/
 func check(e error) {
 	if e != nil {
 		panic(e)
 	}
 }
 
-func loadFile(initial bool) {
-	//TODO get the file name
+/*
+	Loads the file from disk into memory. Takes the first line as the columns
+	and removes them from the in memory structure.
+*/
+func loadFile(initial bool) []Row {
+
+	var columns = ""
 	if initial {
 		fmt.Println("Let's read some dope files! Enter the path here:")
 		pathToFile, _ = reader.ReadString('\n')
@@ -109,36 +133,44 @@ func loadFile(initial bool) {
 
 	f, err := os.Open(pathToFile)
 	check(err)
+	defer f.Close()
 
+	lineNo := 1
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := scanner.Text()
+		if lineNo == 1 {
+			columns = line
+			continue
+		}
+		if lineNo == 2 {
+			continue
+		}
 		row := strings.Split(line, ",")
 		records = append(records, Row{row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]})
 		if len(records) == 12 {
 			break
 		}
+		lineNo++
 	}
 
-	// Removing the column names, we won't need them were we are going
-	records = append(records[:1], records[2:]...)
-	records = append(records[:0], records[1:]...)
+	// Prepare the columns for printing.
+	columns = strings.Replace(columns, ",", " \t", 0)
 
 	fmt.Println("Data from file retrieved! Nicholas Lockhart")
+
+	return records
 }
 
-func displayRecords() {
+/*
+	Display all of the records. Prints the columns out first for easy reading.
+*/
+func displayRecords(records []Row) {
 	fmt.Println("Congrats, you get to read the data that we have! Nicholas Lockhart")
-
-	ref := reflect.ValueOf(&records[0]).Elem()
-	typeOfT := ref.Type()
 
 	for i, s := range records {
 		if i == 0 {
-			for i := 0; i < ref.NumField(); i++ {
-				fmt.Print("\t" + typeOfT.Field(i).Name)
-			}
-			fmt.Println()
+			fmt.Println(columns)
 		}
 		fmt.Println(i+1, "\t",
 			s.species, "\t",
@@ -152,9 +184,13 @@ func displayRecords() {
 			s.comments)
 	}
 	fmt.Println("Nicholas Lockhart")
+
 }
 
-func createRecord() {
+/*
+	Add a record to the in memory structure
+*/
+func createRecord(records []Row) []Row {
 	//TODO add a new record to slice
 	fmt.Println("Awesome, let's make a new record!")
 
@@ -206,11 +242,22 @@ func createRecord() {
 
 	fmt.Println("Placing your info into the list! Nicholas Lockhart")
 
-	records = append(records, Row{species, year, day, id, bud, flower, mature, initials, comment})
+	records = addRecord(records, Row{species, year, day, id, bud, flower, mature, initials, comment})
+
+	return records
 
 }
 
-func workWithRecord() {
+// Separated out the add Records functionality
+func addRecord(records []Row, row Row) []Row {
+	records = append(records, row)
+	return records
+}
+
+/*
+	Change the in memory structure
+*/
+func workWithRecord(records []Row) []Row {
 	//TODO work with record
 	fmt.Println("Alright, tell me the index of the record you want to change: ")
 
@@ -253,15 +300,31 @@ func workWithRecord() {
 	default:
 		fmt.Println("whoops you made a mistake. Returning to main menu! Nicholas Lockhart")
 	}
+
+	return records
 }
 
-func deleteRecord() {
+/*
+	delete an in memory structure
+*/
+func deleteRecord(records []Row) []Row {
 	fmt.Println("Alright, tell me the index of the record you want to get rid of: ")
 
 	reader := bufio.NewReader(os.Stdin)
 	in, _, err := reader.ReadRune()
 	check(err)
 	i := int(in)
-	records = append(records[:i], records[i+1:]...)
+	records = deleteFromSlice(records, i)
 	fmt.Println("check it out, it should be deleted! Nicholas Lockhart")
+
+	return records
+}
+
+// Separated out the deletion statement from delete records
+func deleteFromSlice(records []Row, i int) []Row {
+	// Golang is a bit funny when it comes to removing from a slice
+	// This essentially creates a new slice from all records except for the
+	// index we do not want anymore
+	records = append(records[:i], records[i+1:]...)
+	return records
 }
