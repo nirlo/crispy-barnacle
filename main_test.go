@@ -6,7 +6,9 @@
 	 Professor: Stan Pieda
 */package main
 
-import "testing"
+import (
+	"testing"
+)
 
 // I generate an two empty Row structs in a slice and use the delete
 // funciton, testing the length after.

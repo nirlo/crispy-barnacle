@@ -11,6 +11,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 )
 
@@ -120,6 +121,7 @@ func check(e error) {
 func loadFile(initial bool) []Row {
 
 	var columns = ""
+	var records = []Row{}
 	if initial {
 		fmt.Println("Let's read some dope files! Enter the path here:")
 		pathToFile, _ = reader.ReadString('\n')
@@ -139,13 +141,6 @@ func loadFile(initial bool) []Row {
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := scanner.Text()
-		if lineNo == 1 {
-			columns = line
-			continue
-		}
-		if lineNo == 2 {
-			continue
-		}
 		row := strings.Split(line, ",")
 		records = append(records, Row{row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]})
 		if len(records) == 12 {
@@ -153,6 +148,10 @@ func loadFile(initial bool) []Row {
 		}
 		lineNo++
 	}
+
+	// Removing the column names, we won't need them were we are going
+	records = append(records[:1], records[2:]...)
+	records = append(records[:0], records[1:]...)
 
 	// Prepare the columns for printing.
 	columns = strings.Replace(columns, ",", " \t", 0)
@@ -168,19 +167,25 @@ func loadFile(initial bool) []Row {
 func displayRecords(records []Row) {
 	fmt.Println("Congrats, you get to read the data that we have! Nicholas Lockhart")
 
+	ref := reflect.ValueOf(&records[0]).Elem()
+	typeOfT := ref.Type()
+
 	for i, s := range records {
 		if i == 0 {
-			fmt.Println(columns)
+			for i := 0; i < ref.NumField(); i++ {
+				fmt.Print("\t\t" + typeOfT.Field(i).Name)
+			}
+			fmt.Println()
 		}
 		fmt.Println(i+1, "\t",
 			s.species, "\t",
-			s.year, "\t",
-			s.dayOfYear, "\t",
-			s.id, "\t",
-			s.numberOfBuds, "\t",
-			s.numberOfFlowers, "\t",
-			s.numberMature, "\t",
-			s.initials, "\t",
+			s.year, "\t\t",
+			s.dayOfYear, "\t\t\t",
+			s.id, "\t\t",
+			s.numberOfBuds, "\t\t\t",
+			s.numberOfFlowers, "\t\t\t",
+			s.numberMature, "\t\t\t",
+			s.initials, "\t\t\t",
 			s.comments)
 	}
 	fmt.Println("Nicholas Lockhart")
@@ -189,6 +194,14 @@ func displayRecords(records []Row) {
 
 /*
 	Add a record to the in memory structure
+
+	SOOOOOO
+
+	For some ungodly reason, this doesn't work properly. I get the species name in
+	but then it doesn't take the rest of the information in.
+
+	I don't know why but I won't doing a cli again,
+	or at least not my own version of it
 */
 func createRecord(records []Row) []Row {
 	//TODO add a new record to slice
@@ -256,15 +269,21 @@ func addRecord(records []Row, row Row) []Row {
 
 /*
 	Change the in memory structure
+
+	ANOTHER ONE that doesn't work properly.
+
+	This one skips the input for field and jumps directly to value input.
+
+	yea, fuck this.
 */
 func workWithRecord(records []Row) []Row {
 	//TODO work with record
 	fmt.Println("Alright, tell me the index of the record you want to change: ")
 
 	reader := bufio.NewReader(os.Stdin)
-	in, _, err := reader.ReadRune()
+	var i int
+	_, err := fmt.Scan(&i)
 	check(err)
-	i := int(in)
 
 	fmt.Println("tell me what you want to change: species, year, dayOfYear, id, numberOfBuds, numberOfFlowers, numberMature, initals, comments")
 
@@ -310,11 +329,10 @@ func workWithRecord(records []Row) []Row {
 func deleteRecord(records []Row) []Row {
 	fmt.Println("Alright, tell me the index of the record you want to get rid of: ")
 
-	reader := bufio.NewReader(os.Stdin)
-	in, _, err := reader.ReadRune()
+	var in int
+	_, err := fmt.Scan(&in)
 	check(err)
-	i := int(in)
-	records = deleteFromSlice(records, i)
+	records = deleteFromSlice(records, in)
 	fmt.Println("check it out, it should be deleted! Nicholas Lockhart")
 
 	return records
@@ -325,6 +343,6 @@ func deleteFromSlice(records []Row, i int) []Row {
 	// Golang is a bit funny when it comes to removing from a slice
 	// This essentially creates a new slice from all records except for the
 	// index we do not want anymore
-	records = append(records[:i], records[i+1:]...)
-	return records
+	records[i] = records[len(records)-1]
+	return records[:len(records)-1]
 }
